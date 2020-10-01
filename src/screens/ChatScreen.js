@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import {
     View,
     FlatList,
-    Text,
-    AsyncStorage
+    Text
 } from 'react-native';
 import {
     TextInputComponent,
@@ -11,40 +10,39 @@ import {
 } from '../components/Index'
 import { inject, observer } from "mobx-react";
 
-import Echo from "laravel-echo"
-import Pusher from 'pusher-js/react-native';
+import {
+    Query
+} from 'react-apollo';
+import MessagesQuery from '../Query/MessagesQuery';
 
 class ChatWindow extends Component {
 
-    constructor(props) {
-        super(props);
-        this.props.store.getMessages()
-    }
-
-    componentDidMount() {
-        let token = this.props.store.token
-        const socketConfig = {
-            key: '685f9cd237d05a1944b8',
-            cluster: 'eu',
-            encrypted: true,
-            authEndpoint: 'http://192.168.1.9:8000/api/broadcasting/auth',
-            auth: {
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Accept': 'application/json',
-                },
-            },
-            broadcaster: 'pusher',
-        }
-
-        const client = new Pusher('685f9cd237d05a1944b8', socketConfig)
-
-        let echo = new Echo({ ...socketConfig, client });
-        echo
-            .private('chat')
-            .listen('MessageSent', ev => {
-                this.props.store.addMessage(ev.message)
-            });
+    renderItem = (data) => {
+        return <FlatList
+            data={data ? data.messages : null}
+            renderItem={
+                ({ item }) => {
+                    return (
+                        <Text
+                            style={{
+                                width: 300,
+                                marginVertical: 20
+                            }}
+                        >
+                            {item.text}
+                        </Text>
+                    )
+                }
+            }
+            style={{
+                height: 400,
+                position: 'absolute',
+                alignSelf: 'center',
+                bottom: 20
+            }}
+            keyExtractor={item => item._id}
+            inverted
+        />
     }
 
     onChange = (message) => {
@@ -70,31 +68,14 @@ class ChatWindow extends Component {
                 }}
             >
                 <View>
-                    <FlatList
-                        data={messages ? messages : null}
-                        renderItem={
-                            ({ item }) => {
-                                return (
-                                    <Text
-                                        style={{
-                                            width: 300,
-                                            marginVertical: 20
-                                        }}
-                                    >
-                                        {item.message}
-                                    </Text>
-                                )
-                            }
-                        }
-                        style={{
-                            height: 400,
-                            position: 'absolute',
-                            alignSelf: 'center',
-                            bottom: 20
+                    <Query
+                        query={MessagesQuery}
+                    >
+                        {({ data, loading }) => {
+                            if (loading) <Text>Loading</Text>
+                            return this.renderItem(data)
                         }}
-                        keyExtractor={item => item.id}
-                        inverted
-                    />
+                    </Query>
                 </View>
                 <TextInputComponent
                     onChange={this.onChange}
