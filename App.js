@@ -14,11 +14,14 @@ import { setContext } from '@apollo/client/link/context';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { split, HttpLink } from '@apollo/client';
 import { getMainDefinition } from '@apollo/client/utilities';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 
 const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists
-  const token = AsyncStorage.getItem('token');
+  let token
+  AsyncStorage.getItem('token').then((res) => {
+    token = res
+})
   // return the headers to the context so httpLink can read them
   return {
     headers: {
@@ -29,15 +32,14 @@ const authLink = setContext((_, { headers }) => {
 });
 
 const wsLink = new WebSocketLink({
-  uri: `ws://localhost:3003`,
+  uri: `ws://192.168.1.12:3003`,
   options: {
     reconnect: true
   }
 });
 
-
 const httpLink = new HttpLink({
-  uri: 'http://localhost:3003',
+  uri: 'http://192.168.1.12:3003',
 });
 
 const splitLink = split(

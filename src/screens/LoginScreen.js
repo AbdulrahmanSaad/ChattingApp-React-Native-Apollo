@@ -8,6 +8,11 @@ import {
     ButtonComponent
 } from '../components/Index';
 import { inject, observer } from "mobx-react";
+import {
+    Mutation
+} from 'react-apollo';
+import LoginMutation from '../Mutations/LoginMutation';
+import AsyncStorage from '@react-native-community/async-storage';
 
 class LoginWindow extends Component {
 
@@ -19,9 +24,17 @@ class LoginWindow extends Component {
         this.props.store.setPassword(password)
     }
 
-    onPress = async() => {
-        await this.props.store.login()
-        this.props.navigation.navigate('ChatScreen')
+    onPress = (login) => {
+
+        const {
+            navigate
+        } = this.props.navigation
+
+        login().then((res) => {
+            AsyncStorage.setItem('token', res.data.login.token)
+        }).then(() => {
+            navigate('ChatScreen')
+        })
     }
 
     render (){
@@ -37,19 +50,32 @@ class LoginWindow extends Component {
                     Login
                 </Text>
                 <TextInputComponent
-                placeholder={'email'}
-                onChange={this.handleEmail}
-                vlaue={email}
+                    placeholder={'email'}
+                    onChange={this.handleEmail}
+                    vlaue={email}
                 />
                 <TextInputComponent
-                placeholder={'password'}
-                onChange={this.handlePassword}
-                value={password}
+                    placeholder={'password'}
+                    onChange={this.handlePassword}
+                    value={password}
                 />
-                <ButtonComponent
-                title={'Login'}
-                onPress={this.onPress}
-                />
+                <Mutation
+                    variables={{
+                        email,
+                        password
+                    }}
+                    mutation={LoginMutation}
+                >
+                    {mutate => {
+                        return (
+                            <ButtonComponent
+                                title={'Login'}
+                                onPress={() => this.onPress(mutate)}
+                            />
+                        )
+                    }}
+
+                </Mutation>
             </View>
         )
     }
