@@ -16,12 +16,25 @@ import {
 } from 'react-apollo';
 import MessagesQuery from '../Query/MessagesQuery';
 import MessageMutation from '../Mutations/MessageMutation';
+import MessageSubsriptionsComponent from '../Subscriptions/MessageSubsriptionsComponent';
+import { gql } from "apollo-boost";
+
+const newMessage = gql`
+  subscription {
+    message {
+        _id
+        text
+    }
+  }
+`;
+
+let unsubscribe = null;
 
 class ChatWindow extends Component {
 
-    renderItem = (data) => {
+    renderItem = (messages) => {
         return <FlatList
-            data={data ? data.messages : null}
+            data={messages ? messages : null}
             renderItem={
                 ({ item }) => {
                     return (
@@ -43,7 +56,7 @@ class ChatWindow extends Component {
                 bottom: 20
             }}
             keyExtractor={item => item._id}
-            inverted
+            // inverted
         />
     }
 
@@ -72,9 +85,28 @@ class ChatWindow extends Component {
                     <Query
                         query={MessagesQuery}
                     >
-                        {({ data, loading }) => {
-                            if (loading) <Text>Loading</Text>
-                            return this.renderItem(data)
+                        {({ loading, data, subscribeToMore }) => {
+                            if (loading) {
+                                return null;
+                            }
+
+                            if (!unsubscribe) {
+                                unsubscribe = subscribeToMore({
+                                    document: newMessage,
+                                    updateQuery: (prev, { subscriptionData }) => {
+                                        if (!subscriptionData.data) return prev;
+                                        const { message } = subscriptionData.data;
+                                        return {
+                                            ...prev,
+                                            messages: [...prev.messages, message]
+                                        };
+                                    }
+                                });
+                            }
+                            const {
+                                messages
+                            } = data
+                            return this.renderItem(messages)
                         }}
                     </Query>
                 </View>
@@ -89,17 +121,17 @@ class ChatWindow extends Component {
                     placeholder={'Message'}
                 />
                 <Mutation
-                mutation={MessageMutation}
-                variables={{
-                    text: messageText
-                }}
+                    mutation={MessageMutation}
+                    variables={{
+                        text: messageText
+                    }}
                 >
                     {
                         mutate => {
                             return <ButtonComponent
-                            title={'Send'}
-                            onPress={() => this.onPress(mutate)}
-                        />
+                                title={'Send'}
+                                onPress={() => this.onPress(mutate)}
+                            />
                         }
                     }
                 </Mutation>
