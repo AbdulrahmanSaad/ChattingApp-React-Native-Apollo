@@ -16,7 +16,6 @@ import {
 } from 'react-apollo';
 import MessagesQuery from '../Query/MessagesQuery';
 import MessageMutation from '../Mutations/MessageMutation';
-import MessageSubsriptionsComponent from '../Subscriptions/MessageSubsriptionsComponent';
 import { gql } from "apollo-boost";
 
 const newMessage = gql`
@@ -32,7 +31,11 @@ let unsubscribe = null;
 
 class ChatWindow extends Component {
 
-    renderItem = (messages) => {
+    renderItem = () => {
+        const{
+            messages
+        } = this.props.store
+
         return <FlatList
             data={messages ? messages : null}
             renderItem={
@@ -56,7 +59,7 @@ class ChatWindow extends Component {
                 bottom: 20
             }}
             keyExtractor={item => item._id}
-            // inverted
+            inverted
         />
     }
 
@@ -106,7 +109,10 @@ class ChatWindow extends Component {
                             const {
                                 messages
                             } = data
-                            return this.renderItem(messages)
+
+                            let _messages = [...messages]
+                            this.props.store.setData(_messages)
+                            return this.renderItem()
                         }}
                     </Query>
                 </View>
