@@ -32,14 +32,14 @@ const authLink = setContext(async(_, { headers }) => {
 });
 
 const wsLink = new WebSocketLink({
-  uri: `ws://192.168.1.12:3003`,
+  uri: `ws://0.0.1.0:3000`,
   options: {
     reconnect: true
   }
 });
 
 const httpLink = new HttpLink({
-  uri: 'http://192.168.1.12:3003',
+  uri: 'http://0.0.1.0:3000',
 });
 
 const splitLink = split(
